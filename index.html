@@ -2,195 +2,546 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <meta name="format-detection" content="telephone=no">
-    <title>官方正品查询系统</title>
-    
-    <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/2.4.4/weui.min.css">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流光圣诞树：相册珍藏版</title>
     <style>
-        body {
-            background-color: #f7f7f7;
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-        }
+        body { margin: 0; overflow: hidden; background-color: #020202; font-family: 'Segoe UI', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* 顶部品牌区 */
-        .brand-header {
-            padding: 40px 20px;
-            text-align: center;
-            background-color: #fff;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        }
-        .brand-logo {
-            width: 80px;
-            height: 80px;
-            background: #f2f2f2;
-            border-radius: 50%; /* 圆形Logo显得更正式 */
-            margin: 0 auto 10px;
-            line-height: 80px;
-            color: #999;
-            font-size: 12px;
-        }
-        .brand-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-        }
-        .brand-subtitle {
-            font-size: 14px;
-            color: #888;
-            margin-top: 5px;
+        /* 摄像头小窗 */
+        #video-element {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 160px;
+            height: 120px;
+            border-radius: 12px;
+            transform: scaleX(-1);
+            z-index: 2;
+            opacity: 0.6;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
         }
 
-        /* 结果展示卡片 */
-        .result-box {
-            display: none; /* 默认隐藏 */
-            padding: 30px 20px;
+        /* 顶部状态栏 */
+        #status-bar {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
             text-align: center;
-            background: #fff;
-            margin-top: 20px;
+            color: #ffd700;
+            pointer-events: none;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
         }
-        .icon-box__ctn {
-            margin-top: 15px;
-        }
-        .product-info {
-            text-align: left;
-            margin-top: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #666;
+        .mode-title { font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 5px; }
+        .hint-text { font-size: 14px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px;}
+
+        /* UI 按钮 */
+        #ui-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 20px;
         }
 
-        /* 底部版权 */
-        .footer-tips {
-            padding: 30px;
-            text-align: center;
+        .gold-btn {
+            background: linear-gradient(135deg, #b88a00 0%, #ffe680 50%, #b88a00 100%);
+            border: none;
+            color: #2a1d00;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            transition: transform 0.2s;
+        }
+        .gold-btn:hover { transform: scale(1.05); }
+
+        #file-input { display: none; }
+        #loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            color: #ffd700; font-size: 22px; z-index: 20; background: rgba(0,0,0,0.9);
+            padding: 20px 40px; border-radius: 10px; border: 1px solid #ffd700;
+            transition: opacity 0.5s;
         }
     </style>
+    
+    <!-- 依赖库 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "lil-gui": "https://unpkg.com/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-    <div class="brand-header">
-        <!-- <div class="brand-logo">品牌LOGO</div>  -->
-        <h1 class="brand-title">官方防伪查询</h1>
-        <p class="brand-subtitle">为了您的权益，请确认购买正品</p>
+    <div id="loader">🎄 正在准备节日惊喜...</div>
+    
+    <div id="status-bar">
+        <div class="mode-title" id="mode-text">金色圣诞树</div>
+        <div class="hint-text">✊捏合：纯净树 | 🖐️张开：看照片 | 👌L型手势：放大照片</div>
     </div>
 
-    <div class="weui-form">
-        <div class="weui-form__control-area" style="margin-top: 0;">
-            <div class="weui-cells__group weui-cells__group_form">
-                <div class="weui-cells weui-cells_form">
-                    <div class="weui-cell weui-cell_active">
-                        <div class="weui-cell__hd"><label class="weui-label">防伪码</label></div>
-                        <div class="weui-cell__bd">
-                            <input id="codeInput" class="weui-input" type="number" pattern="[0-9]*" placeholder="请输入瓶身或瓶盖内的数字码">
-                        </div>
-                    </div>
-                </div>
-                <div class="weui-cells__tips">若防伪涂层已刮开，请谨慎购买</div>
-            </div>
-        </div>
+    <div id="canvas-container"></div>
+    <video id="video-element" playsinline></video>
+
+    <div id="ui-container">
+        <button class="gold-btn" onclick="document.getElementById('file-input').click()">📂 添加照片 (Max 10)</button>
+        <button class="gold-btn" id="fs-btn">全屏沉浸</button>
+    </div>
+    
+    <input type="file" id="file-input" accept="image/*" multiple>
+
+    <!-- 粒子着色器 -->
+    <script type="x-shader/x-vertex" id="vertexshader">
+        attribute float sizeRandom;
+        attribute vec3 customColor;
+        varying vec3 vColor;
+        uniform float uTime;
+        uniform float uSizeMean;
         
-        <div class="weui-form__opr-area">
-            <a class="weui-btn weui-btn_primary" href="javascript:" id="btnSubmit">立即查询</a>
-        </div>
-    </div>
-
-    <div id="resultSuccess" class="result-box">
-        <i class="weui-icon-success weui-icon_msg"></i>
-        <div class="icon-box__ctn">
-            <h3 class="weui-msg__title">查询成功，是正品</h3>
-            <p class="weui-msg__desc">您所查询的防伪码由 XX酒业 生产，确认为正品。</p>
+        void main() {
+            vColor = customColor;
+            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
             
-            <div class="product-info">
-                <p><strong>产品名称：</strong>53度 典藏酱香型白酒</p>
-                <p><strong>生产批次：</strong>20231024-A</p>
-                <p><strong>首次查询：</strong>2023-10-27 10:00:00</p>
-            </div>
-        </div>
-        <div style="margin-top: 20px;">
-            <a href="javascript:resetPage();" class="weui-btn weui-btn_default">再查一次</a>
-        </div>
-    </div>
-
-    <div id="resultFail" class="result-box">
-        <i class="weui-icon-warn weui-icon_msg"></i>
-        <div class="icon-box__ctn">
-            <h3 class="weui-msg__title" style="color:#fa5151">防伪码不存在</h3>
-            <p class="weui-msg__desc">系统无法识别该编码。请核对输入是否正确，或联系官方客服。</p>
-        </div>
-        <div style="margin-top: 20px;">
-            <a href="javascript:resetPage();" class="weui-btn weui-btn_default">重新输入</a>
-        </div>
-    </div>
-
-    <div class="footer-tips">
-        <div class="weui-footer">
-            <p class="weui-footer__links">
-                <a href="javascript:;" class="weui-footer__link">隐私政策</a>
-                <a href="javascript:;" class="weui-footer__link">联系官网</a>
-            </p>
-            <!-- <p class="weui-footer__text">Copyright © 2023 XX酒业有限公司</p> -->
-            <!-- <p class="weui-footer__text" style="font-size: 10px; color: #ccc;">ICP备案号：京ICP备12345678号</p> -->
-        </div>
-    </div>
-
-    <script type="text/javascript">
-        // 模拟 Loading 提示
-        function showLoading() {
-            var loadingHtml = `
-            <div id="loadingToast" style="opacity: 1;">
-                <div class="weui-mask_transparent"></div>
-                <div class="weui-toast">
-                    <span class="weui-primary-loading weui-primary-loading_transparent"><i class="weui-primary-loading__dot"></i></span>
-                    <p class="weui-toast__content">查询中</p>
-                </div>
-            </div>`;
-            var div = document.createElement('div');
-            div.innerHTML = loadingHtml;
-            document.body.appendChild(div);
-            return div;
-        }
-
-        function hideLoading(elem) {
-            if(elem) document.body.removeChild(elem);
-        }
-
-        // 重置页面
-        function resetPage() {
-            document.querySelector('.weui-form').style.display = 'block';
-            document.getElementById('resultSuccess').style.display = 'none';
-            document.getElementById('resultFail').style.display = 'none';
-            document.getElementById('codeInput').value = '';
-        }
-
-        // 绑定点击事件
-        document.getElementById('btnSubmit').addEventListener('click', function(){
-            var code = document.getElementById('codeInput').value;
+            // 呼吸效果
+            float breath = 0.5 + 0.5 * sin(uTime * 2.5 + sizeRandom * 50.0);
             
-            if(code.length < 4) {
-                alert('请输入正确的防伪码');
+            // 粒子大小控制
+            gl_PointSize = uSizeMean * (0.6 + sizeRandom * 0.8) * (0.9 + 0.3 * breath) * ( 400.0 / -mvPosition.z );
+            if(gl_PointSize < 0.0) gl_PointSize = 0.0;
+
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+        varying vec3 vColor;
+        
+        void main() {
+            vec2 xy = gl_PointCoord.xy - vec2(0.5);
+            float ll = length(xy);
+            if(ll > 0.5) discard;
+            float alpha = smoothstep(0.5, 0.3, ll);
+            gl_FragColor = vec4(vColor, alpha);
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import GUI from 'lil-gui';
+
+        // --- 全局变量 ---
+        let scene, camera, renderer, particleSystem, uniforms;
+        let mainGroup; 
+        let controls;
+        let photos = []; 
+        let focusedPhotoIndex = -1; 
+        
+        // 需求4: 粒子数量减半 (原28000 -> 14000)
+        const PARTICLE_COUNT = 14000;
+        const MAX_PHOTOS = 10;
+        
+        // 状态管理
+        const state = {
+            mode: 'tree', 
+            zoomActive: false,
+            
+            // 需求5: 粒子大小默认 0.5
+            particleSize: 0.5,
+            
+            // 手势数值
+            handOpenness: 0, 
+            pinchDistance: 0, 
+            handX: 0.5,       
+            
+            rotationVelocity: 0.002
+        };
+
+        const posTree = new Float32Array(PARTICLE_COUNT * 3);
+        const posSphere = new Float32Array(PARTICLE_COUNT * 3);
+
+        // --- 1. 初始化 ---
+        function init() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x020202, 0.015);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.enableRotate = false; // 手势控制旋转
+
+            mainGroup = new THREE.Group();
+            scene.add(mainGroup);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffd700, 2); 
+            dirLight.position.set(10, 10, 20);
+            scene.add(dirLight);
+
+            initParticles();
+            
+            window.addEventListener('resize', onResize);
+            document.getElementById('fs-btn').addEventListener('click', () => {
+                if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else document.exitFullscreen();
+            });
+            document.getElementById('file-input').addEventListener('change', handleUpload);
+
+            initGUI();
+        }
+
+        // --- 2. 粒子系统 ---
+        function initParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(PARTICLE_COUNT * 3);
+            const colors = new Float32Array(PARTICLE_COUNT * 3);
+            const sizes = new Float32Array(PARTICLE_COUNT);
+
+            const colGold = new THREE.Color(0xffcc00);
+            const colRed = new THREE.Color(0xd40000);
+            const colGreen = new THREE.Color(0x008822);
+
+            calculateTreePositions();
+            calculateSpherePositions();
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                positions[i*3] = posTree[i*3];
+                positions[i*3+1] = posTree[i*3+1];
+                positions[i*3+2] = posTree[i*3+2];
+
+                sizes[i] = Math.random();
+
+                // 80% 金, 10% 红, 10% 绿
+                const r = Math.random();
+                let c;
+                if (r < 0.80) {
+                    c = colGold.clone().multiplyScalar(0.8 + Math.random() * 0.4);
+                } else if (r < 0.90) {
+                    c = colRed;
+                } else {
+                    c = colGreen;
+                }
+
+                colors[i*3] = c.r;
+                colors[i*3+1] = c.g;
+                colors[i*3+2] = c.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('sizeRandom', new THREE.BufferAttribute(sizes, 1));
+
+            uniforms = {
+                uTime: { value: 0.0 },
+                uSizeMean: { value: state.particleSize }
+            };
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: document.getElementById('vertexshader').textContent,
+                fragmentShader: document.getElementById('fragmentshader').textContent,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                transparent: true
+            });
+
+            particleSystem = new THREE.Points(geometry, material);
+            mainGroup.add(particleSystem);
+        }
+
+        function calculateTreePositions() {
+            const height = 22;
+            const maxRadius = 9;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const ratio = i / PARTICLE_COUNT;
+                const y = (ratio * height) - (height / 2);
+                const r = (1 - Math.pow(ratio, 0.8)) * maxRadius;
+                const angle = i * 2.4; 
+                const rVar = r * Math.sqrt(Math.random()); 
+                
+                posTree[i*3] = Math.cos(angle) * rVar;
+                posTree[i*3+1] = y;
+                posTree[i*3+2] = Math.sin(angle) * rVar;
+            }
+        }
+
+        function calculateSpherePositions() {
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const r = 25 * Math.cbrt(Math.random()); 
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                posSphere[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                posSphere[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                posSphere[i*3+2] = r * Math.cos(phi);
+            }
+        }
+
+        // --- 3. 照片管理 ---
+        function handleUpload(e) {
+            const files = e.target.files;
+            if(!files.length) return;
+
+            // 需求2: 限制最多10张，累加不清空
+            if (photos.length + files.length > MAX_PHOTOS) {
+                alert(`相册容量限制为 ${MAX_PHOTOS} 张，您还可以上传 ${MAX_PHOTOS - photos.length} 张。`);
                 return;
             }
 
-            var loading = showLoading();
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => createPhotoFrame(img);
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // 清空input以便下次可以选同样的照片
+            e.target.value = '';
+        }
 
-            // === 这里模拟请求后端接口 ===
-            setTimeout(function(){
-                hideLoading(loading);
-                document.querySelector('.weui-form').style.display = 'none';
-                
-                // 模拟：输入 8888 显示真，其他显示假
-                if(code === '8888') {
-                    document.getElementById('resultSuccess').style.display = 'block';
+        function createPhotoFrame(image) {
+            const group = new THREE.Group();
+            
+            const h = 4;
+            const w = h * (image.width / image.height);
+
+            const tex = new THREE.Texture(image);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.needsUpdate = true;
+            
+            const planeGeo = new THREE.PlaneGeometry(w, h);
+            const planeMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            
+            const frameDepth = 0.1;
+            const frameGeo = new THREE.BoxGeometry(w + 0.3, h + 0.3, frameDepth);
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                metalness: 1.0, 
+                roughness: 0.3,
+            });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            
+            plane.position.z = 0.06; // 照片在框前
+
+            group.add(frame);
+            group.add(plane);
+            mainGroup.add(group);
+
+            // 只需要球体位置，因为树模式下照片不显示
+            // 随机分布在球体中
+            const sR = 10 + Math.random() * 12;
+            const sTheta = Math.random() * Math.PI * 2;
+            const sPhi = Math.acos(2 * Math.random() - 1);
+            const spherePos = new THREE.Vector3(
+                sR * Math.sin(sPhi) * Math.cos(sTheta),
+                sR * Math.sin(sPhi) * Math.sin(sTheta),
+                sR * Math.cos(sPhi)
+            );
+
+            // 初始设为隐藏
+            group.scale.set(0,0,0);
+            group.position.copy(spherePos);
+
+            photos.push({
+                group: group,
+                spherePos: spherePos,
+            });
+        }
+
+        // --- 4. MediaPipe ---
+        function initMediaPipe() {
+            const videoElement = document.getElementById('video-element');
+            const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+            
+            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+
+            hands.onResults(results => {
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const lm = results.multiHandLandmarks[0];
+                    state.handX = lm[0].x;
+
+                    const tips = [8, 12, 16, 20];
+                    let avgDist = 0;
+                    tips.forEach(idx => avgDist += Math.hypot(lm[idx].x - lm[0].x, lm[idx].y - lm[0].y));
+                    avgDist /= 4;
+                    const openVal = Math.max(0, Math.min(1, (avgDist - 0.2) * 5));
+                    state.handOpenness += (openVal - state.handOpenness) * 0.1;
+
+                    const pinchD = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+                    const pinchVal = Math.max(0, Math.min(1, (pinchD - 0.05) * 6));
+                    state.pinchDistance += (pinchVal - state.pinchDistance) * 0.15;
                 } else {
-                    document.getElementById('resultFail').style.display = 'block';
+                    state.handOpenness *= 0.9;
+                    state.pinchDistance *= 0.9;
+                    state.handX = 0.5;
                 }
-            }, 800);
-        });
+            });
+
+            const cameraUtils = new Camera(videoElement, {
+                onFrame: async () => await hands.send({image: videoElement}),
+                width: 640, height: 480
+            });
+            cameraUtils.start().then(() => document.getElementById('loader').style.opacity = 0);
+        }
+
+        // --- 5. 动画 ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now() * 0.001;
+            uniforms.uTime.value = time;
+            uniforms.uSizeMean.value = state.particleSize;
+
+            controls.update();
+
+            // 旋转逻辑
+            let targetVelocity = 0.002;
+            if (state.handX < 0.4) targetVelocity = (0.4 - state.handX) * 0.05;
+            else if (state.handX > 0.6) targetVelocity = -(state.handX - 0.6) * 0.05;
+            state.rotationVelocity += (targetVelocity - state.rotationVelocity) * 0.05;
+            mainGroup.rotation.y += state.rotationVelocity;
+
+            // 模式切换
+            if (state.handOpenness > 0.6) {
+                state.mode = 'sphere';
+                document.getElementById('mode-text').innerText = "璀璨星云模式";
+            } else {
+                state.mode = 'tree';
+                document.getElementById('mode-text').innerText = "金色圣诞树模式";
+            }
+
+            // 放大锁定
+            const isZoomGesture = state.pinchDistance > 0.7 && photos.length > 0;
+            if (isZoomGesture) {
+                if (!state.zoomActive) {
+                    state.zoomActive = true;
+                    focusedPhotoIndex = findClosestPhoto();
+                }
+            } else {
+                state.zoomActive = false;
+                focusedPhotoIndex = -1;
+            }
+
+            // 粒子更新
+            const positions = particleSystem.geometry.attributes.position.array;
+            const blend = state.handOpenness;
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const idx = i * 3;
+                const tx = posTree[idx] * (1 - blend) + posSphere[idx] * blend;
+                const ty = posTree[idx+1] * (1 - blend) + posSphere[idx+1] * blend;
+                const tz = posTree[idx+2] * (1 - blend) + posSphere[idx+2] * blend;
+                
+                positions[idx] += (tx - positions[idx]) * 0.08;
+                positions[idx+1] += (ty - positions[idx+1]) * 0.08;
+                positions[idx+2] += (tz - positions[idx+2]) * 0.08;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            // 照片更新
+            photos.forEach((p, i) => {
+                // 需求3: 树模式下隐藏 (blend接近0时隐藏)
+                // 使用 smoothstep 让显示过程更自然
+                let visibilityScale = THREE.MathUtils.smoothstep(blend, 0.2, 0.8);
+                
+                let targetLocalPos = p.spherePos;
+                let targetScale = visibilityScale; // 默认大小跟随显隐状态
+
+                // 放大逻辑
+                if (state.zoomActive && i === focusedPhotoIndex) {
+                    const cameraWorldDir = new THREE.Vector3();
+                    camera.getWorldDirection(cameraWorldDir);
+                    const desiredWorldPos = camera.position.clone().add(cameraWorldDir.multiplyScalar(8));
+                    targetLocalPos = mainGroup.worldToLocal(desiredWorldPos.clone());
+                    targetScale = 1.8; // 放大时强制显示
+                }
+
+                // 位置插值
+                p.group.position.lerp(targetLocalPos, 0.1);
+                
+                // 缩放插值
+                p.group.scale.setScalar(THREE.MathUtils.lerp(p.group.scale.x, targetScale, 0.1));
+
+                // 需求1: 照片不旋转 (始终面向摄像机)
+                // 由于父容器 mainGroup 在旋转，我们需要计算相对于父容器的相机位置
+                // 这样 lookAt 就会抵消父容器的旋转
+                const localCameraPos = mainGroup.worldToLocal(camera.position.clone());
+                p.group.lookAt(localCameraPos);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function findClosestPhoto() {
+            let minD = Infinity;
+            let idx = -1;
+            const frustum = new THREE.Frustum();
+            frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+
+            photos.forEach((p, i) => {
+                const worldPos = p.group.position.clone().applyMatrix4(mainGroup.matrixWorld);
+                if(frustum.containsPoint(worldPos)){
+                    const v = worldPos.project(camera);
+                    const d = v.distanceTo(new THREE.Vector3(0,0,0));
+                    if(d < minD) {
+                        minD = d;
+                        idx = i;
+                    }
+                }
+            });
+            return idx;
+        }
+
+        function initGUI() {
+            const gui = new GUI({ title: '参数调节' });
+            gui.domElement.style.top = '20px';
+            gui.domElement.style.right = '20px';
+            
+            // 需求5: 粒子大小范围 0.1 - 3
+            gui.add(state, 'particleSize', 0.1, 3.0).name('粒子大小');
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 启动
+        init();
+        initMediaPipe();
+        animate();
+
     </script>
 </body>
 </html>

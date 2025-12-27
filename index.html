@@ -2,534 +2,222 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>防伪验证</title>
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>title>titl>ti
+    
+    <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/2.4.4/weui.min.css">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        /* --- 全局样式重置与适配 --- */
         body {
-            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
-            /* background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); */
-            color: #333;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            background-color: #f7f7f7; /* 微信标志性浅灰背景 */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", STHeiti, "Microsoft Yahei", Tahoma, Simsun, sans-serif;
+            color: rgba(0, 0, 0, 0.9);
         }
-        
-        .container {
-            max-width: 100%;
-            width: 90%;
-            background: rgba(255, 255,255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            animation: fadeIn 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .header {
-            margin-bottom: 30px;
-        }
-        
-        .logo {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #09c6f9 0%, #2575fc 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 8px 20px rgba(37, 117, 252, 0.3);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 8px 20px rgba(37, 117, 252, 0.3); }
-            50% { transform: scale(1.05); box-shadow: 0 10px 25px rgba(37, 117, 252, 0.4); }
-            100% { transform: scale(1); box-shadow: 0 8px 20px rgba(37, 117, 252, 0.3); }
-        }
-        
-        .logo i {
-            font-size: 50px;
-            color: white;
-        }
-        
-        h1 {
-            font-size: 32px;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        
-        .subtitle {
-            font-size: 18px;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .problem-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            text-align: left;
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .problem-card h2 {
-            display: flex;
-            align-items: center;
-            color: #e74c3c;
-            margin-bottom: 15px;
-        }
-        
-        .problem-card h2 i {
-            margin-right: 10px;
-            font-size: 24px;
-        }
-        
-        .problem-card ul {
-            padding-left: 30px;
-        }
-        
-        .problem-card li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-        
-        .instruction-card {
-            background: #e3f2fd;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            border: 2px dashed #2575fc;
-        }
-        
-        .instruction-card h2 {
-            color: #2575fc;
-            margin-bottom: 20px;
-        }
-        
-        .steps {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .step {
-            flex: 0 0 160px;
-            position: relative;
-        }
-        
-        .step:not(:last-child)::after {
-            content: "→";
-            position: absolute;
-            top: 45px;
-            right: -20px;
-            font-size: 24px;
-            color: #2575fc;
-            font-weight: bold;
-        }
-        
-        .step-icon {
-            width: 70px;
-            height: 70px;
-            background: #2575fc;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 30px;
-            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.3);
-        }
-        
-        .step p {
-            font-size: 16px;
-            color: #34495e;
-            font-weight: 500;
-            background: white;
-            padding: 8px 15px;
-            border-radius: 30px;
-            display: inline-block;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-        
-        .visual-guide {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        }
-        
-        .phone-mockup {
-            width: 280px;
-            height: 500px;
-            background: #2c3e50;
-            border-radius: 30px;
+
+        /* --- PC 端布局容器 --- */
+        .pc-container {
+            max-width: 960px; /* 限制最大宽度，模拟公众号PC版宽度 */
             margin: 0 auto;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        .phone-screen {
-            width: 100%;
-            height: 100%;
-            background: white;
-            border-radius: 25px;
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            bottom: 10px;
-            overflow: hidden;
+            background-color: #ffffff;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
         }
-        
-        .phone-header {
-            height: 60px;
-            background: #f5f5f5;
+
+        /* --- 顶部导航栏 --- */
+        .header {
+            padding: 20px 40px;
+            border-bottom: 1px solid #ededed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: #07C160; /* 微信绿 */
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            padding: 0 15px;
-            position: relative;
-            border-bottom: 1px solid #eee;
         }
-        
-        .three-dots {
+        .header .nav a {
+            margin-left: 30px;
+            text-decoration: none;
+            color: #666;
+            font-size: 15px;
+            transition: color 0.3s;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            color: #07C160;
+        }
+
+        /* --- 主要内容区域 --- */
+        .main-content {
+            padding: 40px;
+            flex: 1;
             display: flex;
-            gap: 5px;
-            cursor: pointer;
+            gap: 40px;
+        }
+
+        /* 左侧文章区域 */
+        .article-area {
+            flex: 2;
         }
         
-        .dot {
-            width: 8px;
-            height: 8px;
-            background: #bdc3c7;
-            border-radius: 50%;
+        /* 右侧侧边栏 (PC特有) */
+        .sidebar {
+            flex: 1;
+            padding-left: 20px;
+            border-left: 1px solid #f0f0f0;
+        }
+
+        /* --- 模块组件样式 --- */
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.4;
         }
         
-        .browser-icon {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            color: #2575fc;
+        .card {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f5f5f5;
         }
-        
-        .arrow {
-            position: absolute;
-            top: 90px;
-            right: 30px;
-            font-size: 40px;
-            color: #e74c3c;
-            animation: bounce 1.5s infinite;
+        .card-meta {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 10px;
         }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        
-        .btn {
-            padding: 14px 28px;
-            border-radius: 50px;
+        .card p {
+            line-height: 1.8;
+            color: #333;
             font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
+            text-align: justify;
+        }
+
+        /* 二维码卡片 (微信PC页标配) */
+        .qr-box {
+            background: #f8f8f8;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .qr-placeholder {
+            width: 140px;
+            height: 140px;
+            background-color: #ddd;
+            margin: 0 auto 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            color: #888;
+            font-size: 12px;
         }
-        
-        .primary-btn {
-            background: linear-gradient(135deg, #09c6f9 0%, #2575fc 100%);
-            color: white;
-            box-shadow: 0 8px 20px rgba(37, 117, 252, 0.3);
-        }
-        
-        .secondary-btn {
-            background: transparent;
-            border: 2px solid #2575fc;
-            color: #2575fc;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(37, 117, 252, 0.4);
-        }
-        
-        .footer {
-            margin-top: 30px;
-            color: #7f8c8d;
+        .qr-desc {
             font-size: 14px;
-            padding: 15px;
-            border-top: 1px solid #eee;
-            width: 100%;
+            color: #555;
         }
-        
-        .highlight {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-        
-        .non-wechat-message {
-            display: none;
+
+        /* --- 页脚 --- */
+        .footer {
+            padding: 30px;
             text-align: center;
-            padding: 50px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            max-width: 90%;
-            width: 500px;
-            color: #2c3e50;
+            background-color: #f7f7f7;
+            border-top: 1px solid #ededed;
         }
-        
+        .weui-footer__text {
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* --- 移动端适配 (小于768px时) --- */
         @media (max-width: 768px) {
-            .container {
-                width: 95%;
-                padding: 20px;
-            }
-            
-            .steps {
-                flex-direction: column;
-                gap: 20px;
-            }
-            
-            .step:not(:last-child)::after {
-                content: "↓";
-                top: auto;
-                bottom: -25px;
-                left: 50%;
-                right: auto;
-                transform: translateX(-50%);
-            }
-            
-            .phone-mockup {
-                width: 240px;
-                height: 430px;
-            }
-            
-            h1 {
-                font-size: 26px;
-            }
-            
-            .logo {
-                width: 80px;
-                height: 80px;
-            }
-            
-            .logo i {
-                font-size: 40px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 24px;
-            }
-            
-            .subtitle {
-                font-size: 16px;
-            }
-            
-            .step-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
-            }
-            
-            .step p {
-                font-size: 14px;
-            }
+            .pc-container { max-width: 100%; box-shadow: none; }
+            .header { padding: 15px; }
+            .main-content { flex-direction: column; padding: 20px; }
+            .sidebar { border-left: none; padding-left: 0; border-top: 1px solid #f0f0f0; padding-top: 20px;}
+            .header .nav { display: none; } /* 移动端通常隐藏PC导航 */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h1>请在浏览器中打开</h1>
-            <p class="subtitle">检测到您正在微信内浏览，部分功能可能受限</p>
+
+<div class="pc-container">
+    <div class="header">
+        <div class="logo">
+            <i class="weui-icon-success" style="margin-right:8px; font-size: 20px;"></i>
+            微信生态页面
         </div>
-        
-        <div class="problem-card">
-            <h2><i class="fas fa-exclamation-circle"></i> 为什么需要浏览器打开？</h2>
-            <ul>
-                <li>微信内置浏览器限制了许多网页功能</li>
-                <li>无法正常使用下载、支付、文件上传等功能</li>
-                <li>网页加载速度慢，影响使用体验</li>
-                <li>部分内容可能无法正常显示</li>
-            </ul>
-        </div>
-        
-        <div class="instruction-card">
-            <h2>操作指南</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-icon">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </div>
-                    <p>点击右上角三个点</p>
-                </div>
-                <div class="step">
-                    <div class="step-icon">
-                        <i class="fas fa-share"></i>
-                    </div>
-                    <p>选择分享选项</p>
-                </div>
-                <div class="step">
-                    <div class="step-icon">
-                        <i class="fas fa-compass"></i>
-                    </div>
-                    <p>使用浏览器打开</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="visual-guide">
-            <h2 style="margin-bottom: 20px; color: #2c3e50;">操作示意图</h2>
-            <div class="phone-mockup">
-                <div class="phone-screen">
-                    <div class="phone-header">
-                        <div class="three-dots">
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                        </div>
-                        <i class="fas fa-globe browser-icon"></i>
-                    </div>
-                    <i class="fas fa-long-arrow-alt-right arrow"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="action-buttons">
-            <button class="btn primary-btn" onclick="location.reload()">
-                <i class="fas fa-sync-alt"></i> 刷新页面
-            </button>
-            <button class="btn secondary-btn" onclick="alert('请按照上方指引在浏览器中打开本页面')">
-                <i class="fas fa-question-circle"></i> 帮助中心
-            </button>
-        </div>
-        
-        <div class="footer">
-            <p>微信内置浏览器限制了部分功能，<span class="highlight">使用系统浏览器打开</span>可获得完整体验</p>
+        <div class="nav">
+            <a href="#" class="active">首页</a>
+            <a href="#">产品介绍</a>
+            <a href="#">解决方案</a>
+            <a href="#">关于我们</a>
         </div>
     </div>
-    
-    <!-- <div class="non-wechat-message" id="non-wechat-message"> -->
-        <!-- <h1 style="color: #2575fc; margin-bottom: 20px;">欢迎访问</h1>
-        <p style="font-size: 18px; margin-bottom: 15px;"></p>
-        <p style="margin-bottom: 30px;">前往验证中...</p>
-        <div class="loader" style="width: 50px; height: 50px; margin: 0 auto;">
-            <div style="border: 5px solid #f3f3f3; border-top: 5px solid #2575fc; border-radius: 50%; width: 100%; height: 100%; animation: spin 1s linear infinite;"></div>
-        </div> -->
-    <!-- </div> -->
 
-    <script>
-        // 检测是否在微信浏览器内
-        function isWeixinBrowser() {
-            return false;
-            const ua = navigator.userAgent.toLowerCase();
-            return ua.indexOf('micromessenger') !== -1;
-        }
+    <div class="main-content">
         
-        // 从接口获取目标地址
-        async function getTargetUrl() {
-            try {
-                const response = await fetch('https://auth.alwzc.com/proxy/api/v1/com/siteConf?code=zz_url', {
-                    method: 'GET',
-                });
-                
-                if (!response.ok) {
-                    throw new Error('获取目标地址失败');
-                }
-                
-                const result = await response.json();
-                
-                // 检查响应是否成功
-                if (result.success && result.code === 200 && result.data && result.data.zz_url) {
-                    return result.data.zz_url;
-                } else {
-                    throw new Error('接口返回数据格式错误');
-                }
-            } catch (error) {
-                console.error('获取目标地址出错:', error);
-                return 'https://auth.alwzc.com'; // 出错时使用默认地址
-            }
-        }
-                function getUrlParams() {
-            var name = window.location.href;
-			//2. 用 ? 分隔拿到数组：['http://localhost:8080/mb','name=xxxx&id=xxx']
-			var arr = name.split("?");
-			if(arr[1] !== 'undefined'){
-				return arr[1];
-			}
-			return null;
-        }
-        // 页面加载时检测
-        document.addEventListener('DOMContentLoaded', async function() {
-            if (!isWeixinBrowser()) {
-                // 隐藏微信提示页面
-                document.querySelector('.container').style.display = 'none';
-                
-                // 显示非微信提示
-                //const nonWechatMessage = document.getElementById('non-wechat-message');
-                //nonWechatMessage.style.display = 'block';
-                 let params = getUrlParams();
-                // 获取目标地址
-                const target = await getTargetUrl();
-                
-                window.location.href = target + '?'+params;
-            }
-        });
-    </script>
+        <div class="article-area">
+            <h1 class="section-title">欢迎使用符合微信规范的 PC 页面</h1>
+            
+            <div class="card">
+                <div class="card-meta">2023年10月24日 | 官方公告</div>
+                <p>
+                    这是一个基于 WeUI 风格设计的静态 HTML 页面。它采用了经典的灰白配色与微信绿（#07C160）作为点缀。在 PC 端微信浏览器访问时，能够给用户带来一致的视觉体验。
+                </p>
+                <a href="javascript:;" class="weui-btn weui-btn_primary" style="width: auto; display: inline-block; margin-top: 15px; padding: 8px 24px;">了解更多</a>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 18px; margin-bottom: 10px;">设计规范要点</h3>
+                <p>
+                    1. 字体优先使用系统默认字体，保证清晰度。<br>
+                    2. 布局采用居中容器，防止在大屏显示器上内容过宽。<br>
+                    3. 交互组件（如按钮、表单）复用 WeUI 样式。
+                </p>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="qr-box">
+                <div class="qr-placeholder">
+                    
+
+[Image of QR Code]
+
+                </div>
+                <p class="qr-desc">微信扫一扫<br>关注公众号获取更多</p>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <h4 style="font-size: 14px; color: #333; margin-bottom: 10px;">常用链接</h4>
+                <div class="weui-cell weui-cell_access" style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div class="weui-cell__bd" style="font-size: 14px; color: #576b95;">开发文档</div>
+                    <div class="weui-cell__ft"></div>
+                </div>
+                <div class="weui-cell weui-cell_access" style="padding: 10px 0;">
+                    <div class="weui-cell__bd" style="font-size: 14px; color: #576b95;">设计指南</div>
+                    <div class="weui-cell__ft"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="weui-footer">
+            <p class="weui-footer__links">
+                <a href="javascript:;" class="weui-footer__link">底部链接</a>
+                <a href="javascript:;" class="weui-footer__link">联系我们</a>
+            </p>
+            <p class="weui-footer__text">Copyright &copy; 2008-2023 wechat.com</p>
+            <p class="weui-footer__text" style="margin-top:5px;">ICP备12345678号</p>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
